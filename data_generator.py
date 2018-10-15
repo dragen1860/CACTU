@@ -62,7 +62,6 @@ class DataGenerator(object):
         if FLAGS.on_encodings:
             self.dim_input = self.Z_train.shape[1]
 
-
     def make_data_tensor(self, train=True):
         if train:
             mode = FLAGS.mt_mode
@@ -97,7 +96,8 @@ class DataGenerator(object):
             num_train_samples_per_class = FLAGS.inner_update_batch_size_val
             print('Setting up tasks for meta-val')
 
-        task_generator = TaskGenerator(num_classes=num_classes, num_train_samples_per_class=num_train_samples_per_class, num_samples_per_class=num_samples_per_class)
+        task_generator = TaskGenerator(num_classes=num_classes, num_train_samples_per_class=num_train_samples_per_class,
+                                       num_samples_per_class=num_samples_per_class)
         partition_algorithm = FLAGS.partition_algorithm
         margin = FLAGS.margin
 
@@ -111,7 +111,8 @@ class DataGenerator(object):
                 partitions = [partition]
         elif mode == 'encenc':
             if partition_algorithm == 'hyperplanes':
-                print('Using {} hyperplanes-based partition(s) of encoding space to create classes, margin={}'.format(num_partitions, margin))
+                print('Using {} hyperplanes-based partition(s) of encoding space to create classes, margin={}'.format(
+                    num_partitions, margin))
                 partitions = task_generator.get_partitions_hyperplanes(encodings=Z, num_splits=num_splits,
                                                                        margin=margin, num_partitions=num_partitions)
             elif partition_algorithm == 'kmeans':
@@ -128,7 +129,8 @@ class DataGenerator(object):
                 partitions.append(partition)
         else:
             raise ValueError('Unrecognized task generation scheme')
-        print('Average number of classes per partition: {}'.format(np.mean([len(list(partition.keys()))for partition in partitions])))
+        print('Average number of classes per partition: {}'.format(
+            np.mean([len(list(partition.keys())) for partition in partitions])))
         if FLAGS.on_encodings:
             features = features_ph = tf.placeholder(Z.dtype, Z.shape)
         else:
@@ -140,7 +142,8 @@ class DataGenerator(object):
             for split in ['train', 'test']:
                 task['{}_labels'.format(split)] = tf.one_hot(task['{}_labels'.format(split)], num_classes)
                 if not FLAGS.on_encodings:
-                    task['{}_features'.format(split)] = tf.cast(tf.gather(features, task['{}_indices'.format(split)]), tf.float32) / 255.0
+                    task['{}_features'.format(split)] = tf.cast(tf.gather(features, task['{}_indices'.format(split)]),
+                                                                tf.float32) / 255.0
                 else:
                     task['{}_features'.format(split)] = tf.gather(features, task['{}_indices'.format(split)])
             return task
@@ -151,10 +154,12 @@ class DataGenerator(object):
             return features, labels
 
         tasks = task_generator.get_tasks(num_tasks=num_tasks, partitions=partitions)
-        train_ind, train_labels, test_ind, test_labels = [task[0] for task in tasks], [task[1] for task in tasks], [task[2] for task in tasks], [task[3] for task in tasks]
+        train_ind, train_labels, test_ind, test_labels = [task[0] for task in tasks], [task[1] for task in tasks], [
+            task[2] for task in tasks], [task[3] for task in tasks]
 
         dataset = tf.data.Dataset.from_tensor_slices(
-            {"train_indices": train_ind, "train_labels": train_labels, "test_indices": test_ind, "test_labels": test_labels})
+            {"train_indices": train_ind, "train_labels": train_labels, "test_indices": test_ind,
+             "test_labels": test_labels})
         dataset = dataset.map(map_func=gather_preprocess, num_parallel_calls=FLAGS.num_parallel_calls)
         dataset = dataset.map(map_func=stack, num_parallel_calls=FLAGS.num_parallel_calls)
         dataset = dataset.batch(batch_size=self.batch_size)

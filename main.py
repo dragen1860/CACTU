@@ -25,7 +25,8 @@ flags.DEFINE_integer('metatrain_iterations', 30000, 'number of metatraining iter
 flags.DEFINE_integer('meta_batch_size', 8, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
 flags.DEFINE_float('update_lr', 0.05, 'step size alpha for inner gradient update.')
-flags.DEFINE_integer('inner_update_batch_size_train', 1, 'number of examples used for inner gradient update (K for K-shot learning).')
+flags.DEFINE_integer('inner_update_batch_size_train', 1,
+                     'number of examples used for inner gradient update (K for K-shot learning).')
 flags.DEFINE_integer('inner_update_batch_size_val', 5, 'above but for meta-val')
 flags.DEFINE_integer('outer_update_batch_size', 5, 'number of examples used for outer gradient update')
 flags.DEFINE_integer('num_updates', 5, 'number of inner gradient updates during training.')
@@ -56,8 +57,10 @@ flags.DEFINE_bool('resume', True, 'resume training if there is a model available
 flags.DEFINE_bool('train', True, 'True to train, False to test.')
 flags.DEFINE_integer('test_iter', -1, 'iteration to load model (-1 for latest model)')
 flags.DEFINE_bool('test_set', False, 'Set to true to test on the the test set, False for the validation set.')
-flags.DEFINE_integer('log_inner_update_batch_size_val', -1, 'specify log directory iubsv. (use to test with different iubsv)')
-flags.DEFINE_float('train_update_lr', -1, 'value of inner gradient step step during training. (use if you want to test with a different value)')
+flags.DEFINE_integer('log_inner_update_batch_size_val', -1,
+                     'specify log directory iubsv. (use to test with different iubsv)')
+flags.DEFINE_float('train_update_lr', -1,
+                   'value of inner gradient step step during training. (use if you want to test with a different value)')
 flags.DEFINE_bool('save_checkpoints', False, 'if True, save model weights as checkpoints')
 flags.DEFINE_bool('debug', False, 'if True, use tf debugger')
 flags.DEFINE_string('suffix', '', 'suffix for an exp_string')
@@ -66,14 +69,15 @@ flags.DEFINE_integer('num_eval_tasks', 1000, 'number of tasks to meta-test on')
 
 logdir = FLAGS.logdir
 
+
 def train(model, saver, sess, exp_string, data_generator, resume_itr=0):
     SUMMARY_INTERVAL = 100
     SAVE_INTERVAL = 10000
     PRINT_INTERVAL = 100
-    TEST_PRINT_INTERVAL = PRINT_INTERVAL*5
+    TEST_PRINT_INTERVAL = PRINT_INTERVAL * 5
 
     if FLAGS.log:
-        train_writer = tf.summary.FileWriter(logdir + '/' + exp_string, graph=None)     # omitting the graph
+        train_writer = tf.summary.FileWriter(logdir + '/' + exp_string, graph=None)  # omitting the graph
     print('Done initializing, starting training.')
     prelosses, postlosses = [], []
 
@@ -82,9 +86,9 @@ def train(model, saver, sess, exp_string, data_generator, resume_itr=0):
         input_tensors = [model.metatrain_op]
 
         if (itr % SUMMARY_INTERVAL == 0 or itr % PRINT_INTERVAL == 0):
-            input_tensors.extend([model.summ_op, model.total_loss1, model.total_losses2[FLAGS.num_updates-1]])
+            input_tensors.extend([model.summ_op, model.total_loss1, model.total_losses2[FLAGS.num_updates - 1]])
             if model.classification:
-                input_tensors.extend([model.total_accuracy1, model.total_accuracies2[FLAGS.num_updates-1]])
+                input_tensors.extend([model.total_accuracy1, model.total_accuracies2[FLAGS.num_updates - 1]])
 
         result = sess.run(input_tensors, feed_dict)
 
@@ -95,29 +99,32 @@ def train(model, saver, sess, exp_string, data_generator, resume_itr=0):
                 train_writer.flush()
             postlosses.append(result[-1])
 
-        if (itr!=0) and itr % PRINT_INTERVAL == 0:
+        if (itr != 0) and itr % PRINT_INTERVAL == 0:
             print_str = 'Iteration ' + str(itr)
             print_str += ': ' + str(np.mean(prelosses)) + ', ' + str(np.mean(postlosses))
             tqdm.write(print_str)
             prelosses, postlosses = [], []
 
-        if FLAGS.save_checkpoints and (itr!=0) and itr % SAVE_INTERVAL == 0:
+        if FLAGS.save_checkpoints and (itr != 0) and itr % SAVE_INTERVAL == 0:
             saver.save(sess, logdir + '/' + exp_string + '/model' + str(itr))
 
-        if (itr!=0) and itr % TEST_PRINT_INTERVAL == 0:
+        if (itr != 0) and itr % TEST_PRINT_INTERVAL == 0:
             feed_dict = {}
             if model.classification:
-                input_tensors = [model.metaval_total_accuracy1, model.metaval_total_accuracies2[FLAGS.num_updates-1], model.summ_op]
+                input_tensors = [model.metaval_total_accuracy1, model.metaval_total_accuracies2[FLAGS.num_updates - 1],
+                                 model.summ_op]
             else:
-                input_tensors = [model.metaval_total_loss1, model.metaval_total_losses2[FLAGS.num_updates-1], model.summ_op]
+                input_tensors = [model.metaval_total_loss1, model.metaval_total_losses2[FLAGS.num_updates - 1],
+                                 model.summ_op]
 
             result = sess.run(input_tensors, feed_dict)
             tqdm.write('Validation results: ' + str(result[0]) + ', ' + str(result[1]))
 
-    saver.save(sess, logdir + '/' + exp_string +  '/model' + str(itr+1))
+    saver.save(sess, logdir + '/' + exp_string + '/model' + str(itr + 1))
 
 
 NUM_TEST_POINTS = FLAGS.num_eval_tasks
+
 
 def test(model, saver, sess, exp_string, data_generator, test_num_updates=None):
     num_classes = data_generator.num_classes_train  # for classification, 1 otherwise
@@ -129,9 +136,11 @@ def test(model, saver, sess, exp_string, data_generator, test_num_updates=None):
     ensemble_accuracies, no_ensemble_accuracies = [], []
 
     for _ in tqdm(range(NUM_TEST_POINTS), 'meta-testing'):
-        feed_dict = {model.meta_lr : 0.0}
+        feed_dict = {model.meta_lr: 0.0}
         if FLAGS.from_scratch:
-            result = sess.run([model.metaval_total_accuracy1] + model.metaval_total_accuracies2 + model.metaval_train_accuracies, feed_dict)
+            result = sess.run(
+                [model.metaval_total_accuracy1] + model.metaval_total_accuracies2 + model.metaval_train_accuracies,
+                feed_dict)
         else:
             result = sess.run([model.metaval_total_accuracy1] + model.metaval_total_accuracies2, feed_dict)
         metaval_accuracies.append(result)
@@ -144,7 +153,7 @@ def test(model, saver, sess, exp_string, data_generator, test_num_updates=None):
 
     means = np.mean(metaval_accuracies, 0)
     stds = np.std(metaval_accuracies, 0)
-    ci95 = 1.96*stds/np.sqrt(NUM_TEST_POINTS)
+    ci95 = 1.96 * stds / np.sqrt(NUM_TEST_POINTS)
 
     print('Mean validation accuracy/loss, stddev, and confidence intervals')
     print((means, stds, ci95))
@@ -156,13 +165,15 @@ def test(model, saver, sess, exp_string, data_generator, test_num_updates=None):
     out_name = ''
     if (FLAGS.partition_algorithm == 'kmeans' or FLAGS.partition_algorithm == 'kmodes') and FLAGS.mv_mode == 'encenc':
         out_name += '_k' + str(FLAGS.num_clusters_test)
-    out_name += '_mode' + str(FLAGS.mv_mode) + '_ncv' + str(FLAGS.num_classes_val) + '_test_iubsv' + str(FLAGS.inner_update_batch_size_val) + '_test_q' + str(FLAGS.outer_update_batch_size) + '_stepsize' + str(FLAGS.update_lr) + '_iter' + str(FLAGS.metatrain_iterations)
+    out_name += '_mode' + str(FLAGS.mv_mode) + '_ncv' + str(FLAGS.num_classes_val) + '_test_iubsv' + str(
+        FLAGS.inner_update_batch_size_val) + '_test_q' + str(FLAGS.outer_update_batch_size) + '_stepsize' + str(
+        FLAGS.update_lr) + '_iter' + str(FLAGS.metatrain_iterations)
     out_name = logdir + '/' + exp_string + '/' + out_name[1:]
     out_filename = out_name + '.csv'
 
     with open(out_filename, 'w') as f:
         writer = csv.writer(f, delimiter=',')
-        writer.writerow(['update'+str(i) for i in range(len(means))])
+        writer.writerow(['update' + str(i) for i in range(len(means))])
         writer.writerow(means)
         writer.writerow(stds)
         writer.writerow(ci95)
@@ -193,26 +204,25 @@ def main():
     dim_output_val = data_generator.dim_output_val
     dim_input = data_generator.dim_input
 
-
     tf_data_load = True
     num_classes_train = data_generator.num_classes_train
     num_classes_val = data_generator.num_classes_val
 
-    if FLAGS.train: # only construct training model if needed
+    if FLAGS.train:  # only construct training model if needed
         random.seed(5)
         image_tensor, label_tensor = data_generator.make_data_tensor()
-        inputa = tf.slice(image_tensor, [0,0,0], [-1,num_classes_train*FLAGS.inner_update_batch_size_train, -1])
-        inputb = tf.slice(image_tensor, [0,num_classes_train*FLAGS.inner_update_batch_size_train, 0], [-1,-1,-1])
-        labela = tf.slice(label_tensor, [0,0,0], [-1,num_classes_train*FLAGS.inner_update_batch_size_train, -1])
-        labelb = tf.slice(label_tensor, [0,num_classes_train*FLAGS.inner_update_batch_size_train, 0], [-1,-1,-1])
+        inputa = tf.slice(image_tensor, [0, 0, 0], [-1, num_classes_train * FLAGS.inner_update_batch_size_train, -1])
+        inputb = tf.slice(image_tensor, [0, num_classes_train * FLAGS.inner_update_batch_size_train, 0], [-1, -1, -1])
+        labela = tf.slice(label_tensor, [0, 0, 0], [-1, num_classes_train * FLAGS.inner_update_batch_size_train, -1])
+        labelb = tf.slice(label_tensor, [0, num_classes_train * FLAGS.inner_update_batch_size_train, 0], [-1, -1, -1])
         input_tensors = {'inputa': inputa, 'inputb': inputb, 'labela': labela, 'labelb': labelb}
 
     random.seed(6)
     image_tensor, label_tensor = data_generator.make_data_tensor(train=False)
-    inputa = tf.slice(image_tensor, [0,0,0], [-1,num_classes_val*FLAGS.inner_update_batch_size_val, -1])
-    inputb = tf.slice(image_tensor, [0,num_classes_val*FLAGS.inner_update_batch_size_val, 0], [-1,-1,-1])
-    labela = tf.slice(label_tensor, [0,0,0], [-1,num_classes_val*FLAGS.inner_update_batch_size_val, -1])
-    labelb = tf.slice(label_tensor, [0,num_classes_val*FLAGS.inner_update_batch_size_val, 0], [-1,-1,-1])
+    inputa = tf.slice(image_tensor, [0, 0, 0], [-1, num_classes_val * FLAGS.inner_update_batch_size_val, -1])
+    inputb = tf.slice(image_tensor, [0, num_classes_val * FLAGS.inner_update_batch_size_val, 0], [-1, -1, -1])
+    labela = tf.slice(label_tensor, [0, 0, 0], [-1, num_classes_val * FLAGS.inner_update_batch_size_val, -1])
+    labelb = tf.slice(label_tensor, [0, num_classes_val * FLAGS.inner_update_batch_size_val, 0], [-1, -1, -1])
     metaval_input_tensors = {'inputa': inputa, 'inputb': inputb, 'labela': labela, 'labelb': labelb}
 
     model = MAML(dim_input, dim_output_train, dim_output_val, test_num_updates=test_num_updates)
@@ -252,9 +262,9 @@ def main():
     exp_string += '.mbs_' + str(FLAGS.meta_batch_size) + \
                   '.nct_' + str(FLAGS.num_classes_train) + \
                   '.iubst_' + str(FLAGS.inner_update_batch_size_train) + \
-                    '.iubsv_' + str(FLAGS.log_inner_update_batch_size_val) + \
-                    '.oubs' + str(FLAGS.outer_update_batch_size)
-    exp_string = exp_string[1:]     # get rid of leading period
+                  '.iubsv_' + str(FLAGS.log_inner_update_batch_size_val) + \
+                  '.oubs' + str(FLAGS.outer_update_batch_size)
+    exp_string = exp_string[1:]  # get rid of leading period
 
     if FLAGS.on_encodings:
         exp_string += '.onenc'
@@ -289,7 +299,7 @@ def main():
             model_file = model_file[:model_file.index('model')] + 'model' + str(FLAGS.test_iter)
         if model_file:
             ind1 = model_file.index('model')
-            resume_itr = int(model_file[ind1+5:])
+            resume_itr = int(model_file[ind1 + 5:])
             print("Restoring model weights from " + model_file)
             saver.restore(sess, model_file)
         else:

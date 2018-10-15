@@ -7,6 +7,7 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python import layers as tf_layers
 from tensorflow.python.platform import flags
 from collections import defaultdict
+
 FLAGS = flags.FLAGS
 
 
@@ -17,8 +18,8 @@ def get_images(paths, labels, nb_samples=None, shuffle=True):
     else:
         sampler = lambda x: x
     images = [(i, os.path.join(path, image)) \
-        for i, path in zip(labels, paths) \
-        for image in sampler(os.listdir(path))]
+              for i, path in zip(labels, paths) \
+              for image in sampler(os.listdir(path))]
     if shuffle:
         random.shuffle(images)
     return images
@@ -27,7 +28,7 @@ def get_images(paths, labels, nb_samples=None, shuffle=True):
 # Network helpers
 def conv_block(inp, cweight, bweight, reuse, scope, activation=tf.nn.relu, max_pool_pad='VALID', residual=False):
     """ Perform, conv, batch norm, nonlinearity, and max pool """
-    stride, no_stride = [1,2,2,1], [1,1,1,1]
+    stride, no_stride = [1, 2, 2, 1], [1, 1, 1, 1]
 
     if FLAGS.max_pool:
         conv_output = tf.nn.conv2d(inp, cweight, no_stride, 'SAME') + bweight
@@ -55,7 +56,7 @@ def normalize(inp, activation, reuse, scope):
 def mse(pred, label):
     pred = tf.reshape(pred, [-1])
     label = tf.reshape(label, [-1])
-    return tf.reduce_mean(tf.square(pred-label))
+    return tf.reduce_mean(tf.square(pred - label))
 
 
 def xent(pred, label, update_batch_size):
@@ -97,6 +98,7 @@ def get_data(dataset, num_encoding_dims, test_set):
         else:
             X, Y, Z = data['X'], data['Y'], data['Z']
         return X, Y, Z
+
     X_train, Y_train, Z_train = get_XYZ(filenames['train'])
     X_val, Y_val, Z_val = get_XYZ(filenames['val'])
     X_test, Y_test, Z_test = get_XYZ(filenames['test'])
@@ -120,7 +122,8 @@ def get_data(dataset, num_encoding_dims, test_set):
             for i, lines in enumerate(f):
                 example_name, *example_attributes = lines.strip().split()
                 example_name = int(example_name[:example_name.find('.jpg')])
-                name_to_attributes[example_name] = np.array(list(map(lambda a: 0 if int(a) < 0 else 1, example_attributes)))
+                name_to_attributes[example_name] = np.array(
+                    list(map(lambda a: 0 if int(a) < 0 else 1, example_attributes)))
             print([(i, name) for (i, name) in enumerate(attribute_names)])
 
         def split_attributes(names):
@@ -132,15 +135,16 @@ def get_data(dataset, num_encoding_dims, test_set):
 
         [attributes_train, attributes_val, attributes_test] = map(split_attributes, [Y_train, Y_val, Y_test])
         attributes_train = attributes_train[:, 0:n_train_attributes]
-        attributes_val = attributes_val[:, n_train_attributes:n_train_attributes+n_val_attributes]
+        attributes_val = attributes_val[:, n_train_attributes:n_train_attributes + n_val_attributes]
         attributes_test = attributes_test[:, -n_test_attributes:]
 
         i = 500
         assert np.all(name_to_attributes[Y_test[i]][-n_test_attributes:] == attributes_test[i])
-        assert np.all(name_to_attributes[Y_val[i]][n_train_attributes:n_train_attributes+n_val_attributes] == attributes_val[i])
+        assert np.all(
+            name_to_attributes[Y_val[i]][n_train_attributes:n_train_attributes + n_val_attributes] == attributes_val[i])
         Y_train, Y_val, Y_test = attributes_train, attributes_val, attributes_test
 
-    if not test_set:   # use val as test
+    if not test_set:  # use val as test
         X_test, Y_test, Z_test = X_val, Y_val, Z_val
-    
+
     return X_train, Y_train, Z_train, X_test, Y_test, Z_test

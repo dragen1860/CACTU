@@ -3,6 +3,7 @@ import random
 from tensorflow.python.platform import flags
 from functools import reduce
 from tqdm import tqdm
+
 FLAGS = flags.FLAGS
 from collections import defaultdict
 from itertools import combinations, product
@@ -25,7 +26,7 @@ class TaskGenerator(object):
         train_indices, train_labels, test_indices, test_labels = [], [], [], []
         classes = list(partition.keys())
         sampled_classes = random.sample(classes, self.num_classes)
-        random.shuffle(sampled_classes)     # the same classes given a different label ordering is a new task
+        random.shuffle(sampled_classes)  # the same classes given a different label ordering is a new task
         for label, cls in zip(range(self.num_classes), sampled_classes):
             class_indices = random.sample(partition[cls], self.num_samples_per_class)
             train_indices.extend(class_indices[:self.num_train_samples_per_class])
@@ -63,7 +64,7 @@ class TaskGenerator(object):
                     point_on_plane = np.random.uniform(low=0.0, high=0.0, size=(d,))
                 else:
                     point_on_plane = np.random.uniform(low=-0.8, high=0.8, size=(d,))
-                relative_vector = encodings - point_on_plane # broadcasted
+                relative_vector = encodings - point_on_plane  # broadcasted
                 signed_distance = np.dot(relative_vector, unit_normal_vector)
                 below = np.where(signed_distance <= -margin)[0]
                 above = np.where(signed_distance >= margin)[0]
@@ -85,9 +86,10 @@ class TaskGenerator(object):
             partition, num_failed = self.get_partition_from_splits(splits)
             partitions.append(partition)
             bad_partitions += num_failed
-            if (i+1) % (num_partitions // 10) == 0:
+            if (i + 1) % (num_partitions // 10) == 0:
                 tqdm.write('\t good partitions: {}, bad partitions: {}'.format(i + 1, bad_partitions))
-        print("Generated {} partitions respecting margin {}, with {} failed partitions.".format(num_partitions, margin, bad_partitions))
+        print("Generated {} partitions respecting margin {}, with {} failed partitions.".format(num_partitions, margin,
+                                                                                                bad_partitions))
         return partitions
 
     def get_partition_from_splits(self, splits):
@@ -131,7 +133,9 @@ class TaskGenerator(object):
             n_init = 10
         init = 'k-means++'
 
-        print('Number of encodings: {}, number of n_clusters: {}, number of inits: '.format(len(encodings_list), len(n_clusters_list)), n_init)
+        print('Number of encodings: {}, number of n_clusters: {}, number of inits: '.format(len(encodings_list),
+                                                                                            len(n_clusters_list)),
+              n_init)
 
         kmeans_list = []
         for n_clusters in tqdm(n_clusters_list, desc='get_partitions_kmeans_n_clusters'):
@@ -145,7 +149,7 @@ class TaskGenerator(object):
                         break
                     else:
                         tqdm.write("Too few classes ({}) with greater than {} examples.".format(num_big_enough_clusters,
-                                                                                           self.num_samples_per_class))
+                                                                                                self.num_samples_per_class))
                         tqdm.write('Frequency: {}'.format(counts))
                 kmeans_list.append(kmeans)
         partitions = []
@@ -172,7 +176,7 @@ class TaskGenerator(object):
         """
         for cls in list(partition.keys()):
             if len(partition[cls]) < self.num_samples_per_class:
-                del(partition[cls])
+                del (partition[cls])
         return partition
 
     def get_celeba_task_pool(self, attributes, order=3, print_partition=None):
@@ -183,13 +187,18 @@ class TaskGenerator(object):
         num_pools = 0
         partitions = []
         from scipy.special import comb
-        for attr_comb in tqdm(combinations(range(attributes.shape[1]), order), desc='get_task_pool', total=comb(attributes.shape[1], order)):
-            for booleans in product(range(2), repeat=order-1):
+        for attr_comb in tqdm(combinations(range(attributes.shape[1]), order), desc='get_task_pool',
+                              total=comb(attributes.shape[1], order)):
+            for booleans in product(range(2), repeat=order - 1):
                 booleans = (0,) + booleans  # only the half of the cartesian products that start with 0
-                positive = np.where(np.all([attributes[:, attr] == i_booleans for (attr, i_booleans) in zip(attr_comb, booleans)], axis=0))[0]
+                positive = np.where(
+                    np.all([attributes[:, attr] == i_booleans for (attr, i_booleans) in zip(attr_comb, booleans)],
+                           axis=0))[0]
                 if len(positive) < self.num_samples_per_class:
                     continue
-                negative = np.where(np.all([attributes[:, attr] == 1 - i_booleans for (attr, i_booleans) in zip(attr_comb, booleans)], axis=0))[0]
+                negative = np.where(
+                    np.all([attributes[:, attr] == 1 - i_booleans for (attr, i_booleans) in zip(attr_comb, booleans)],
+                           axis=0))[0]
                 if len(negative) < self.num_samples_per_class:
                     continue
                 # inner_pool[booleans] = {0: list(negative), 1: list(positive)}
@@ -197,5 +206,6 @@ class TaskGenerator(object):
                 num_pools += 1
                 if num_pools == print_partition:
                     print(attr_comb, booleans)
-        print('Generated {} task pools by using {} attributes from {} per pool'.format(num_pools, order, attributes.shape[1]))
+        print('Generated {} task pools by using {} attributes from {} per pool'.format(num_pools, order,
+                                                                                       attributes.shape[1]))
         return partitions
