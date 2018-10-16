@@ -138,6 +138,7 @@ class TaskGenerator(object):
               n_init)
 
         kmeans_list = []
+        print('Prepare to clustering>>>')
         for n_clusters in tqdm(n_clusters_list, desc='get_partitions_kmeans_n_clusters'):
             for encodings in tqdm(encodings_list, desc='get_partitions_kmeans_encodings'):
                 while True:

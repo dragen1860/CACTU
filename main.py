@@ -186,31 +186,33 @@ def test(model, saver, sess, exp_string, data_generator, test_num_updates=None):
 
 
 def main():
+
     if FLAGS.train:
         test_num_updates = 20
     elif FLAGS.from_scratch:
         test_num_updates = 200
-    else:
+    else: # test
         test_num_updates = 50
 
     if not FLAGS.train:
-        orig_meta_batch_size = FLAGS.meta_batch_size
         # always use meta batch size of 1 when testing.
+        orig_meta_batch_size = FLAGS.meta_batch_size
         FLAGS.meta_batch_size = 1
 
     sess = tf.InteractiveSession()
 
+    # k_train k_query,  k_val, k_query
     data_generator = DataGenerator(FLAGS.inner_update_batch_size_train + FLAGS.outer_update_batch_size,
                                    FLAGS.inner_update_batch_size_val + FLAGS.outer_update_batch_size,
                                    FLAGS.meta_batch_size)
 
     dim_output_train = data_generator.dim_output_train
     dim_output_val = data_generator.dim_output_val
-    dim_input = data_generator.dim_input
-
-    tf_data_load = True
     num_classes_train = data_generator.num_classes_train
     num_classes_val = data_generator.num_classes_val
+    dim_input = data_generator.dim_input
+    print('dim_output_train:', dim_output_train, 'dim_output_val:', dim_output_val)
+
 
     if FLAGS.train:  # only construct training model if needed
         random.seed(5)
@@ -230,10 +232,9 @@ def main():
     metaval_input_tensors = {'inputa': inputa, 'inputb': inputb, 'labela': labela, 'labelb': labelb}
 
     model = MAML(dim_input, dim_output_train, dim_output_val, test_num_updates=test_num_updates)
-    if FLAGS.train or not tf_data_load:
+    if FLAGS.train:
         model.construct_model(input_tensors=input_tensors, prefix='metatrain_')
-    if tf_data_load:
-        model.construct_model(input_tensors=metaval_input_tensors, prefix='metaval_')
+    model.construct_model(input_tensors=metaval_input_tensors, prefix='metaval_')
     model.summ_op = tf.summary.merge_all()
 
     saver = loader = tf.train.Saver(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES), max_to_keep=10)
@@ -241,7 +242,7 @@ def main():
     if FLAGS.debug:
         sess = tf_debug.LocalCLIDebugWrapperSession(sess)
 
-    if FLAGS.train == False:
+    if not FLAGS.train:
         # change to original meta batch size when loading model.
         FLAGS.meta_batch_size = orig_meta_batch_size
 

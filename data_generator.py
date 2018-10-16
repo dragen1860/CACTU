@@ -9,7 +9,7 @@ from tqdm import tqdm
 FLAGS = flags.FLAGS
 
 
-class DataGenerator(object):
+class DataGenerator:
     def __init__(self, num_samples_per_class_train, num_samples_per_class_val, batch_size):
         """
         Args:
@@ -63,6 +63,7 @@ class DataGenerator(object):
             self.dim_input = self.Z_train.shape[1]
 
     def make_data_tensor(self, train=True):
+
         if train:
             mode = FLAGS.mt_mode
             num_classes = self.num_classes_train
@@ -80,7 +81,8 @@ class DataGenerator(object):
             num_samples_per_class = self.num_samples_per_class_train
             num_train_samples_per_class = FLAGS.inner_update_batch_size_train
             print('Setting up tasks for meta-training')
-        else:
+
+        else: # test
             mode = FLAGS.mv_mode
             if mode == 'encenc':
                 raise NotImplementedError
