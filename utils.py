@@ -61,7 +61,7 @@ def mse(pred, label):
 
 def xent(pred, label, update_batch_size):
     # Note - with tf version <=0.12, this loss has incorrect 2nd derivatives
-    return tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=label) / update_batch_size
+    return tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=label) / update_batch_size
 
 
 # Data helpers

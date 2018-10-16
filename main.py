@@ -14,6 +14,7 @@ from tqdm import tqdm
 import os
 
 FLAGS = flags.FLAGS
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 ## Dataset/method options
 flags.DEFINE_string('datasource', 'omniglot', 'omniglot or mnist or miniimagenet or celeba')
@@ -120,7 +121,7 @@ def train(model, saver, sess, exp_string, data_generator, resume_itr=0):
             result = sess.run(input_tensors, feed_dict)
             tqdm.write('Validation results: ' + str(result[0]) + ', ' + str(result[1]))
 
-    saver.save(sess, logdir + '/' + exp_string + '/model' + str(itr + 1))
+    saver.save(sess, logdir + '/' + exp_string + '/model' + str(FLAGS.metatrain_iterations))
 
 
 NUM_TEST_POINTS = FLAGS.num_eval_tasks
