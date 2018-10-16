@@ -26,15 +26,17 @@ flags.DEFINE_integer('metatrain_iterations', 30000, 'number of metatraining iter
 flags.DEFINE_integer('meta_batch_size', 8, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
 flags.DEFINE_float('update_lr', 0.05, 'step size alpha for inner gradient update.')
+
 flags.DEFINE_integer('inner_update_batch_size_train', 1,
                      'number of examples used for inner gradient update (K for K-shot learning).')
 flags.DEFINE_integer('inner_update_batch_size_val', 5, 'above but for meta-val')
 flags.DEFINE_integer('outer_update_batch_size', 5, 'number of examples used for outer gradient update')
+flags.DEFINE_integer('num_classes_train', 5, 'number of classes used in classification for meta-training')
+flags.DEFINE_integer('num_classes_val', 5, 'number of classes used in classification for meta-validation.')
+
 flags.DEFINE_integer('num_updates', 5, 'number of inner gradient updates during training.')
 flags.DEFINE_string('mt_mode', 'gtgt', 'meta-training mode (for sampling, labeling): gtgt or encenc')
 flags.DEFINE_string('mv_mode', 'gtgt', 'meta-validation mode (for sampling, labeling): gtgt or encenc')
-flags.DEFINE_integer('num_classes_train', 5, 'number of classes used in classification for meta-training')
-flags.DEFINE_integer('num_classes_val', 5, 'number of classes used in classification for meta-validation.')
 flags.DEFINE_float('margin', 0.0, 'margin for generating partitions using random hyperplanes')
 flags.DEFINE_integer('num_partitions', 1, 'number of partitions, -1 for same as number of meta-training tasks')
 flags.DEFINE_string('partition_algorithm', 'kmeans', 'hyperplanes or kmeans')
@@ -191,7 +193,7 @@ def main():
     else:
         test_num_updates = 50
 
-    if FLAGS.train == False:
+    if not FLAGS.train:
         orig_meta_batch_size = FLAGS.meta_batch_size
         # always use meta batch size of 1 when testing.
         FLAGS.meta_batch_size = 1
