@@ -86,7 +86,7 @@ def train(model, saver, sess, exp_string, data_generator, resume_itr=0):
         feed_dict = {}
         input_tensors = [model.metatrain_op]
 
-        if (itr % SUMMARY_INTERVAL == 0 or itr % PRINT_INTERVAL == 0):
+        if itr % SUMMARY_INTERVAL == 0 or itr % PRINT_INTERVAL == 0:
             input_tensors.extend([model.summ_op, model.total_loss1, model.total_losses2[FLAGS.num_updates - 1]])
             if model.classification:
                 input_tensors.extend([model.total_accuracy1, model.total_accuracies2[FLAGS.num_updates - 1]])
@@ -122,6 +122,7 @@ def train(model, saver, sess, exp_string, data_generator, resume_itr=0):
             tqdm.write('Validation results: ' + str(result[0]) + ', ' + str(result[1]))
 
     saver.save(sess, logdir + '/' + exp_string + '/model' + str(FLAGS.metatrain_iterations))
+    print('saved checkpoint.')
 
 
 NUM_TEST_POINTS = FLAGS.num_eval_tasks
@@ -157,7 +158,7 @@ def test(model, saver, sess, exp_string, data_generator, test_num_updates=None):
     ci95 = 1.96 * stds / np.sqrt(NUM_TEST_POINTS)
 
     print('Mean validation accuracy/loss, stddev, and confidence intervals')
-    print((means, stds, ci95))
+    print(means)
 
     if FLAGS.from_scratch:
         print('Mean training accuracy')
